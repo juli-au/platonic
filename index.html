@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>platonic</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<button id="menu-toggle" type="button" aria-label="toggle controls">&#9776;</button>
+<aside id="panel">
+  <header>
+    <h1>platonic ⭐</h1>
+    <p class="tagline">Dowel connectors for Platonic solids and their friends</p>
+  </header>
+  <form id="controls"></form>
+  <ul id="facts"></ul>
+  <div class="actions">
+    <button id="download" type="button" disabled>Download STL</button>
+    <button id="share" type="button">Copy link</button>
+  </div>
+  <p id="status">loading OpenSCAD&hellip;</p>
+  <footer>
+    <p>
+      Rendered in your browser by
+      <a href="https://github.com/openscad/openscad-wasm">openscad-wasm</a>.
+      Source at
+      <a href="https://github.com/juliaogris/platonic">juliaogris/platonic</a>.
+    </p>
+    <p>
+      You may sell prints made with platonic. If you print one, I'd love a
+      photo at
+      <a href="mailto:julia.ogris@gmail.com">julia.ogris@gmail.com</a>,
+      but no pressure.
+    </p>
+  </footer>
+</aside>
+<main id="viewport">
+  <canvas id="canvas"></canvas>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
