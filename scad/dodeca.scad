@@ -103,7 +103,7 @@ module dodeca_vertex() {
         }
         for (d = dirs) along(d)
             translate([0, 0, gap]) cylinder(d = bore_d, h = socket + 1);
-        translate([0, 0, low + 0.6 - 50]) cube(100, center = true);
+        translate([0, 0, low + 0.6 - 500]) cube(1000, center = true);
     }
 }
 

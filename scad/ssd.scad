@@ -105,7 +105,7 @@ module ssd_tip() {
         }
         for (d = dirs) along(d)
             translate([0, 0, tip_gap]) cylinder(d = bore_d, h = socket + over);
-        translate([0, 0, base_z - 50]) cube(100, center = true);
+        translate([0, 0, base_z - 500]) cube(1000, center = true);
     }
 }
 
@@ -161,7 +161,7 @@ module ssd_hub() {
         }
         for (d = dirs) along(d)
             translate([0, 0, hub_gap]) cylinder(d = bore_d, h = socket + 1);
-        translate([0, 0, low + 0.6 - 50]) cube(100, center = true);
+        translate([0, 0, low + 0.6 - 500]) cube(1000, center = true);
     }
 }
 

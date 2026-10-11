@@ -39,7 +39,7 @@ module tip_vertex(n, lean, gap, bore_d, wall, socket) {
         }
         for (d = dirs) along(d)
             translate([0, 0, gap]) cylinder(d = bore_d, h = socket + over);
-        translate([0, 0, base_z - 50]) cube(100, center = true);
+        translate([0, 0, base_z - 500]) cube(1000, center = true);
     }
 }
 
@@ -82,6 +82,6 @@ module regular_vertex(n, lean, gap, bore_d, wall, socket, fin_t, plate_r,
         for (d = dirs) along(d)
             translate([0, 0, gap]) cylinder(d = bore_d, h = socket + 1);
         for (d = dirs) yarn_hole(d, bed, outer, fin_t, yarn_d, rim);
-        translate([0, 0, bed - 50]) cube(100, center = true);
+        translate([0, 0, bed - 500]) cube(1000, center = true);
     }
 }

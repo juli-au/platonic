@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
-import { SOLIDS, FILES, autoWall, parseEcho } from "./solids.js";
+import { SOLIDS, FILES, SIZES, TESTED, autoWall, parseEcho, sizeDefines } from "./solids.js";
 
 const statusEl = document.getElementById("status");
 const downloadEl = document.getElementById("download");
@@ -28,7 +28,7 @@ function defaultsFor(s) {
     return {
         solid: s.id,
         part: 0,
-        dowel: s.defaultSize ?? s.sizes[0],
+        dowel: s.defaultSize ?? 4,
         fit: FIT.value,
         wall: null,
         len: s.defaultLength ?? 300,
@@ -55,7 +55,7 @@ function applyUrlParams() {
     const num = (name) => Number(query.get(name));
     const index = s.parts.findIndex((p) => p.part === query.get("part"));
     if (index >= 0) state.part = index;
-    if (s.sizes.includes(num("dowel"))) state.dowel = num("dowel");
+    if (SIZES.includes(num("dowel"))) state.dowel = num("dowel");
     if (query.has("fit") && Number.isFinite(num("fit"))) state.fit = clamp(num("fit"), FIT);
     if (query.has("wall") && Number.isFinite(num("wall"))) state.wall = clamp(num("wall"), WALL);
     if (query.has("len") && Number.isFinite(num("len"))) state.len = clamp(num("len"), LENGTH);
@@ -143,7 +143,7 @@ function buildControls() {
     solidSelect.className = "wide";
     partSelect.className = "wide";
 
-    const dowelSelect = select(s.sizes.map((d) => [String(d), `${d} mm`]), String(state.dowel), (d) => {
+    const dowelSelect = select(SIZES.map((d) => [String(d), `${d} mm`]), String(state.dowel), (d) => {
         state.dowel = Number(d);
         syncWall();
         scheduleRender();
@@ -208,8 +208,11 @@ function showFacts(echoes) {
         factsEl.append(li);
     };
     add(`Print ${p.count} of this part.`);
-    if (p.file) {
-        add(`This is the same part as the ${byId.get("dodeca").name} vertex.`);
+    if (!TESTED.includes(state.dowel)) {
+        add(`${state.dowel} mm parts have not been test-printed yet.`);
+    }
+    if (p.from) {
+        add(`This is the same part as the ${byId.get(p.from).name} vertex.`);
         return;
     }
     const echo = echoes.map(parseEcho).find((e) => e.span ?? e.star_span ?? e.height);
@@ -266,12 +269,12 @@ async function startRender() {
 
     const s = solid();
     const p = part();
+    const source = p.from ? byId.get(p.from) : s;
     const defines = {
         part: `"${p.part}"`,
-        bore_d: Math.round((state.dowel + state.fit) * 100) / 100,
-        wall: wall(),
+        ...sizeDefines(source, state.dowel, state.fit, wall()),
     };
-    if (!p.file) defines[s.length] = state.len;
+    if (!p.from) defines[s.length] = state.len;
 
     const worker = new Worker(new URL("./worker.js", import.meta.url), {
         type: "module",
@@ -302,7 +305,7 @@ async function startRender() {
         statusEl.textContent = `render failed: ${event.message}`;
         console.error(event);
     };
-    worker.postMessage({ id: renderId, files, file: p.file ?? s.file, defines });
+    worker.postMessage({ id: renderId, files, file: source.file, defines });
 }
 
 document.getElementById("share").addEventListener("click", async () => {
@@ -330,9 +333,10 @@ let viewer = null;
 
 function initViewer() {
     const canvas = document.getElementById("canvas");
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    // The canvas is transparent, so the dotted page background shows
+    // behind the part.
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x14151a);
 
     const camera = new THREE.PerspectiveCamera(40, 1, 1, 2000);
     camera.position.set(160, 90, 160);
@@ -340,17 +344,17 @@ function initViewer() {
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
 
-    scene.add(new THREE.HemisphereLight(0xf0ead8, 0x40382c, 1.1));
+    scene.add(new THREE.HemisphereLight(0xfff8ee, 0x8a7f70, 1.4));
     const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     keyLight.position.set(1, 2, 1.5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x8ba0c0, 0.7);
+    const rimLight = new THREE.DirectionalLight(0x9fb0ff, 0.6);
     rimLight.position.set(-2, -0.5, -1);
     scene.add(rimLight);
 
     const material = new THREE.MeshStandardMaterial({
-        color: 0xf2e3cf,
-        roughness: 0.55,
+        color: 0xe8664a,
+        roughness: 0.6,
         metalness: 0.05,
     });
 

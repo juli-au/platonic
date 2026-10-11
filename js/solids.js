@@ -1,45 +1,48 @@
 // The solids, their printed parts, and the .scad files they need.
 //
 // Each solid lists its parts with how many to print. A part is rendered
-// from the solid's own file unless it names another one, as the great
-// dodecahedron does for its dimple vertex. `length` is the variable that
+// from the solid's own file unless it names another solid in `from`, as
+// the great dodecahedron does for its dimple vertex. `length` is the variable that
 // sets the longest stake, and `stakes` turns the ECHO values of a render
 // into the stakes to cut, as [count, length in mm] pairs.
 
 export const SOLIDS = [
     {
         id: "tetra", name: "tetrahedron", file: "tetra.scad",
-        sizes: [4, 5, 6], length: "dowel_len", lengthLabel: "dowel length",
+        length: "dowel_len", lengthLabel: "dowel length",
         parts: [{ part: "tetra_vertex", label: "vertex", count: 4 }],
         stakes: (e) => [[6, e.dowel_len]],
     },
     {
         id: "cube", name: "cube", file: "cube.scad",
-        sizes: [4, 5, 6], length: "dowel_len", lengthLabel: "dowel length",
+        length: "dowel_len", lengthLabel: "dowel length",
         parts: [{ part: "cube_vertex", label: "vertex", count: 8 }],
         stakes: (e) => [[12, e.dowel_len]],
     },
     {
         id: "octa", name: "octahedron", file: "octa.scad",
-        sizes: [4, 5, 6], length: "dowel_len", lengthLabel: "dowel length",
+        length: "dowel_len", lengthLabel: "dowel length",
         parts: [{ part: "octa_vertex", label: "vertex", count: 6 }],
         stakes: (e) => [[12, e.dowel_len]],
     },
     {
         id: "dodeca", name: "dodecahedron", file: "dodeca.scad",
-        sizes: [4, 5], length: "dowel_len", lengthLabel: "dowel length",
+        base: 4, radii: { tri_r: 14 }, widths: { fin_t: 2.0 },
+        length: "dowel_len", lengthLabel: "dowel length",
         parts: [{ part: "dodeca_vertex", label: "vertex", count: 20 }],
         stakes: (e) => [[30, e.dowel_len]],
     },
     {
         id: "icosa", name: "icosahedron", file: "icosa.scad",
-        sizes: [4, 5], length: "dowel_len", lengthLabel: "dowel length",
+        base: 4, radii: { pent_r: 17 }, widths: { fin_t: 2.0, band: 2.4 },
+        length: "dowel_len", lengthLabel: "dowel length",
         parts: [{ part: "icosa_vertex", label: "vertex", count: 12 }],
         stakes: (e) => [[30, e.dowel_len]],
     },
     {
         id: "ssd", name: "small stellated dodecahedron", file: "ssd.scad",
-        sizes: [4, 5], length: "ridge_len", lengthLabel: "ridge stake length",
+        base: 4, radii: { hex_r: 13 }, widths: { fin_t: 2.0 },
+        length: "ridge_len", lengthLabel: "ridge stake length",
         defaultLength: 280, minWall: 1.8,
         parts: [
             { part: "ssd_tip", label: "star point", count: 12 },
@@ -49,16 +52,18 @@ export const SOLIDS = [
     },
     {
         id: "gd", name: "great dodecahedron", file: "gd.scad",
-        sizes: [4, 5], length: "ridge_len", lengthLabel: "ridge stake length",
+        base: 4, widths: { fin_t: 2.0, band: 2.4 },
+        length: "ridge_len", lengthLabel: "ridge stake length",
         parts: [
             { part: "gd_hub", label: "hub", count: 12 },
-            { part: "dodeca_vertex", label: "dimple vertex", count: 20, file: "dodeca.scad" },
+            { part: "dodeca_vertex", label: "dimple vertex", count: 20, from: "dodeca" },
         ],
         stakes: (e) => [[30, e.ridge_len], [60, e.valley_len]],
     },
     {
         id: "gsd", name: "great stellated dodecahedron", file: "kepler.scad",
-        sizes: [4, 5], defaultSize: 5, length: "ridge_len", lengthLabel: "ridge stake length",
+        base: 5, radii: { pent_r: 22 }, widths: { fin_t: 2.0 },
+        defaultSize: 5, length: "ridge_len", lengthLabel: "ridge stake length",
         parts: [
             { part: "gsd_tip", label: "star point", count: 20 },
             { part: "gsd_hub", label: "hub", count: 12 },
@@ -67,7 +72,8 @@ export const SOLIDS = [
     },
     {
         id: "gi", name: "great icosahedron", file: "gi.scad",
-        sizes: [4, 5], length: "long_len", lengthLabel: "longest stake length",
+        base: 4, widths: { fin_t: 2.0, band: 2.4 },
+        length: "long_len", lengthLabel: "longest stake length",
         parts: [
             { part: "gi_tip", label: "star point", count: 12 },
             { part: "gi_hub", label: "hub", count: 20 },
@@ -76,6 +82,24 @@ export const SOLIDS = [
         stakes: (e) => e.counts.map((count, i) => [count, e.stake_lengths[i]]),
     },
 ];
+
+// The dowel sizes on offer, and the ones that have been test-printed.
+export const SIZES = [3, 4, 5, 6, 8, 10];
+export const TESTED = [4, 5];
+
+// The design variables for a dowel size. The bore is the dowel plus the
+// clearance, and sockets get deeper for thick dowels. Base plates and
+// gussets were drawn for the solid's `base` dowel size: their radii grow
+// and shrink with the bore, and their widths only grow.
+export function sizeDefines(solid, dowel, fit, wall) {
+    const round = (v) => Math.round(v * 100) / 100;
+    const bore = round(dowel + fit);
+    const k = (dowel + 1.1) / ((solid.base ?? 4) + 1.1);
+    const out = { bore_d: bore, wall, socket: Math.max(14, Math.round(3.5 * dowel)) };
+    for (const [name, v] of Object.entries(solid.radii ?? {})) out[name] = round(v * k);
+    for (const [name, v] of Object.entries(solid.widths ?? {})) out[name] = round(v * Math.max(1, k));
+    return out;
+}
 
 // Every .scad file a render may need. The worker writes all of them into
 // OpenSCAD's file system, so `use` and `include` between them resolve.

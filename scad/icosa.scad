@@ -107,7 +107,7 @@ module icosa_vertex() {
         for (d = dirs) along(d)
             translate([0, 0, gap]) cylinder(d = bore_d, h = socket + 1);
         for (d = dirs) yarn_hole(d, low + 0.6, outer, fin_t, yarn_d);
-        translate([0, 0, low + 0.6 - 50]) cube(100, center = true);
+        translate([0, 0, low + 0.6 - 500]) cube(1000, center = true);
     }
 }
 

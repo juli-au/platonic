@@ -136,7 +136,7 @@ module gd_hub() {
         // The valley arms crowd the centre beside each gusset, so the yarn
         // holes sit halfway out along the gussets, clear of them.
         for (d = ridges) yarn_hole(d, base_z, outer, fin_t, yarn_d, x = 0.5 * reach);
-        translate([0, 0, base_z - 50]) cube(100, center = true);
+        translate([0, 0, base_z - 500]) cube(1000, center = true);
     }
 }
 
