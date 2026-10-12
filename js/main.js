@@ -9,6 +9,7 @@ const statusEl = document.getElementById("status");
 const downloadEl = document.getElementById("download");
 const factsEl = document.getElementById("facts");
 const tabsEl = document.getElementById("tabs");
+const layersEl = document.getElementById("layers");
 const form = document.getElementById("controls");
 
 const byId = new Map(SOLIDS.map((s) => [s.id, s]));
@@ -20,7 +21,7 @@ const FIGURE = "figure";
 // The current settings. view is FIGURE or the index of a part. wall is
 // null while it follows the dowel size. len is the longest stake, or the
 // shortest one when by is "shortest". faces shows the solid's faces in
-// the assembled view.
+// the assembled view, and hidden lists the parts it leaves out.
 const state = {};
 
 function solid() {
@@ -41,6 +42,7 @@ function defaultsFor(s) {
         len: s.defaultLength ?? 300,
         by: "longest",
         faces: true,
+        hidden: [],
     };
 }
 
@@ -70,6 +72,8 @@ function applyUrlParams() {
     if (query.has("len") && Number.isFinite(num("len"))) state.len = clamp(num("len"), LENGTH);
     if (query.get("by") === "shortest") state.by = "shortest";
     if (query.get("faces") === "0") state.faces = false;
+    state.hidden = (query.get("hide") ?? "").split(",").filter(Boolean).map(Number)
+        .filter((i) => Number.isInteger(i) && i >= 0 && i < s.parts.length);
 }
 
 function updateUrl() {
@@ -80,6 +84,7 @@ function updateUrl() {
         if (state[name] !== defs[name]) query.set(name, state[name]);
     }
     if (!state.faces) query.set("faces", "0");
+    if (state.hidden.length) query.set("hide", state.hidden.join(","));
     history.replaceState(null, "", `?${query}`);
 }
 
@@ -237,21 +242,21 @@ function syncLength(multi = !byRow.hidden) {
     else label.textContent = state.by === "shortest" ? "shortest stake length" : "longest stake length";
 }
 
+function hex(color) {
+    return `#${color.toString(16).padStart(6, "0")}`;
+}
+
+function dot(color) {
+    const el = document.createElement("span");
+    el.className = "dot";
+    el.style.background = hex(color);
+    return el;
+}
+
 // Tabs over the viewer: the assembled frame first, then one per printed
-// part. A faces switch follows the tabs while the assembled view shows.
+// part.
 function buildTabs() {
     tabsEl.replaceChildren();
-    const faces = document.createElement("button");
-    faces.type = "button";
-    faces.className = "toggle";
-    faces.textContent = "faces";
-    faces.setAttribute("aria-pressed", String(state.faces));
-    faces.hidden = state.view !== FIGURE;
-    faces.addEventListener("click", () => {
-        state.faces = !state.faces;
-        faces.setAttribute("aria-pressed", String(state.faces));
-        scheduleRender();
-    });
     const views = [[FIGURE, "assembled"], ...solid().parts.map((p, i) => [i, `${p.label} ×${p.count}`])];
     for (const [view, text] of views) {
         const button = document.createElement("button");
@@ -259,26 +264,51 @@ function buildTabs() {
         button.textContent = text;
         // A part tab carries a dot in the colour the part has in the
         // viewer and in the assembled frame.
-        if (view !== FIGURE) {
-            const dot = document.createElement("span");
-            dot.className = "dot";
-            dot.style.background = `#${KIND_COLORS[view].toString(16).padStart(6, "0")}`;
-            button.prepend(dot);
-        }
+        if (view !== FIGURE) button.prepend(dot(KIND_COLORS[view]));
         button.setAttribute("role", "tab");
         button.setAttribute("aria-selected", String(view === state.view));
         button.addEventListener("click", () => {
             if (state.view === view) return;
             state.view = view;
-            for (const b of tabsEl.querySelectorAll("[role=tab]")) {
-                b.setAttribute("aria-selected", String(b === button));
-            }
-            faces.hidden = view !== FIGURE;
+            for (const b of tabsEl.children) b.setAttribute("aria-selected", String(b === button));
+            layersEl.hidden = view !== FIGURE;
             scheduleRender({ refit: true });
         });
         tabsEl.append(button);
     }
-    tabsEl.append(faces);
+    buildLayers();
+}
+
+// Switches under the tabs while the assembled view shows: one per part,
+// when there is more than one, and one for the faces. Hiding a part hides
+// its connectors and every stake that ends in one.
+function buildLayers() {
+    layersEl.replaceChildren();
+    layersEl.hidden = state.view !== FIGURE;
+    const toggle = (content, pressed, onClick) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.append(...content);
+        button.setAttribute("aria-pressed", String(pressed));
+        button.addEventListener("click", () => {
+            onClick();
+            button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
+            scheduleRender();
+        });
+        layersEl.append(button);
+    };
+    const parts = solid().parts;
+    if (parts.length > 1) {
+        parts.forEach((p, i) => {
+            toggle([dot(KIND_COLORS[i]), plural(p.label, p.count)], !state.hidden.includes(i), () => {
+                state.hidden = state.hidden.includes(i)
+                    ? state.hidden.filter((h) => h !== i) : [...state.hidden, i];
+            });
+        });
+    }
+    toggle(["faces"], state.faces, () => {
+        state.faces = !state.faces;
+    });
 }
 
 // ---------------------------------------------------------------------
@@ -586,13 +616,16 @@ function showFrame(echo, defines) {
 
     const group = new THREE.Group();
     const ballGeometry = new THREE.SphereGeometry(ball, 20, 14);
+    const shown = (i) => !state.hidden.includes(f.kinds[i]);
     f.points.forEach((_, i) => {
+        if (!shown(i)) return;
         const mesh = new THREE.Mesh(ballGeometry, viewer.kindMaterials[f.kinds[i]]);
         mesh.position.copy(v[i]);
         group.add(mesh);
     });
     const up = new THREE.Vector3(0, 1, 0);
     for (const [i, j] of f.edges) {
+        if (!shown(i) || !shown(j)) continue;
         const length = v[i].distanceTo(v[j]);
         const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rod, rod, length, 10), viewer.dowelMaterial);
         mesh.position.copy(v[i]).add(v[j]).multiplyScalar(0.5);
