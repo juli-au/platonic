@@ -6,6 +6,15 @@ import { SOLIDS, FILES, SIZES, TESTED, autoWall, parseEcho, sizeDefines } from "
 import { frame, trueFaces } from "./frames.js";
 
 const statusEl = document.getElementById("status");
+const loadingEl = document.getElementById("loading");
+const loadingTextEl = document.getElementById("loading-text");
+
+// Shows or hides the rendering indicator over the viewer.
+function setLoading(on, text = "rendering…") {
+    loadingTextEl.textContent = text;
+    loadingEl.classList.toggle("on", on);
+    document.getElementById("viewport").classList.toggle("busy", on);
+}
 const downloadEl = document.getElementById("download");
 const factsEl = document.getElementById("facts");
 const tabsEl = document.getElementById("tabs");
@@ -503,6 +512,7 @@ async function update() {
     dirty = false;
     const start = performance.now();
     statusEl.textContent = "rendering…";
+    setLoading(true);
     try {
         files ??= await loadFiles();
         const s = solid();
@@ -530,6 +540,7 @@ async function update() {
         console.error(err);
     } finally {
         busy = false;
+        setLoading(false);
         if (dirty) update();
     }
 }
@@ -564,6 +575,7 @@ downloadEl.addEventListener("click", async () => {
     try {
         for (const [i, q] of parts.entries()) {
             statusEl.textContent = `rendering part ${i + 1} of ${parts.length}…`;
+            setLoading(true, `rendering part ${i + 1} of ${parts.length}…`);
             save(await renderPart(q, lastLongest), q);
             await new Promise((resolve) => setTimeout(resolve, 400));
         }
@@ -573,6 +585,7 @@ downloadEl.addEventListener("click", async () => {
         console.error(err);
     } finally {
         busy = false;
+        setLoading(false);
         downloadEl.disabled = false;
         if (dirty) update();
     }
