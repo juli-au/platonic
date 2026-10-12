@@ -45,12 +45,22 @@
       <a href="mailto:julia.ogris@gmail.com">julia.ogris@gmail.com</a>,
       but no pressure.
     </p>
+    <p class="dedication">
+      Dedicated to my daughters Mali and Anika, who have been so awesome
+      helping me assemble these.
+    </p>
   </footer>
 </aside>
 <main id="viewport">
   <nav id="tabs" role="tablist" aria-label="views"></nav>
   <div id="layers" aria-label="show in the assembled view"></div>
-  <h2 id="figure-name"></h2>
+  <div id="figure-bar">
+    <div class="stepper">
+      <button id="prev-figure" type="button" aria-label="previous figure"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="next-figure" type="button" aria-label="next figure"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <h2 id="figure-name"></h2>
+  </div>
   <canvas id="canvas"></canvas>
 </main>
 <script type="module" src="js/main.js"></script>

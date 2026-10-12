@@ -169,6 +169,29 @@ function fieldset(title, ...controls) {
 }
 
 const mm = (v) => `${v} mm`;
+
+// Switches to another figure with its default settings.
+function selectSolid(id) {
+    Object.assign(state, defaultsFor(byId.get(id)));
+    buildControls();
+    buildTabs();
+    scheduleRender({ refit: true });
+}
+
+// Steps to the next or previous figure in the list, wrapping at the ends.
+function stepSolid(by) {
+    const i = SOLIDS.findIndex((x) => x.id === state.solid);
+    selectSolid(SOLIDS[(i + by + SOLIDS.length) % SOLIDS.length].id);
+}
+
+document.getElementById("prev-figure").addEventListener("click", () => stepSolid(-1));
+document.getElementById("next-figure").addEventListener("click", () => stepSolid(1));
+// The arrow keys step too, unless a control has the focus and uses them.
+addEventListener("keydown", (event) => {
+    if (event.target.closest?.("input, select, textarea")) return;
+    if (event.key === "ArrowLeft") stepSolid(-1);
+    if (event.key === "ArrowRight") stepSolid(1);
+});
 let lengthRow = null;
 let byRow = null;
 
@@ -176,12 +199,7 @@ function buildControls() {
     const s = solid();
     form.replaceChildren();
 
-    const solidSelect = select(SOLIDS.map((x) => [x.id, x.name]), s.id, (id) => {
-        Object.assign(state, defaultsFor(byId.get(id)));
-        buildControls();
-        buildTabs();
-        scheduleRender({ refit: true });
-    });
+    const solidSelect = select(SOLIDS.map((x) => [x.id, x.name]), s.id, selectSolid);
     solidSelect.className = "wide";
 
     const dowelSelect = select(SIZES.map((d) => [String(d), `${d} mm`]), String(state.dowel), (d) => {

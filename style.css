@@ -250,6 +250,12 @@ footer p {
     margin: 0 0 6px;
 }
 
+footer .dedication {
+    margin-top: 10px;
+    font-style: italic;
+    color: var(--text);
+}
+
 footer a {
     color: var(--muted);
 }
@@ -295,20 +301,59 @@ footer a {
     box-shadow: 0 1px 4px rgba(31, 36, 51, 0.08);
 }
 
-#figure-name {
+#figure-bar {
     position: absolute;
-    left: 22px;
-    right: 22px;
-    bottom: 18px;
+    left: 18px;
+    right: 18px;
+    bottom: 16px;
     z-index: 4;
-    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+}
+
+#figure-name {
+    margin: 0 0 0 6px;
     font-family: var(--subheading-font);
     font-size: clamp(20px, 3.2vw, 34px);
     font-weight: 600;
     line-height: 1.15;
     color: var(--text);
     opacity: 0.85;
-    pointer-events: none;
+}
+
+.stepper {
+    flex: none;
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel);
+    box-shadow: 0 1px 4px rgba(31, 36, 51, 0.08);
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.stepper button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.stepper button + button {
+    border-left: 1px solid var(--border);
+}
+
+@media (hover: hover) {
+    .stepper button:hover {
+        background: var(--accent-soft);
+    }
 }
 
 #layers {
