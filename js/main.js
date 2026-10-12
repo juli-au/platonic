@@ -317,10 +317,14 @@ function buildLayers() {
             });
         });
     }
-    toggle(["faces"], state.faces, () => {
-        state.faces = !state.faces;
-    });
-    toggle([`true faces (${solid().faces})`], state.named, () => {
+    // On the convex solids and the stella the visible faces are the faces
+    // the name counts, so one switch shows them.
+    if (solid().surface) {
+        toggle(["faces"], state.faces, () => {
+            state.faces = !state.faces;
+        });
+    }
+    toggle([`${solid().surface ? "true faces" : "faces"} (${solid().faces})`], state.named, () => {
         state.named = !state.named;
     });
     const core = solid().core;
@@ -720,7 +724,7 @@ function showFrame(echo, defines) {
         mesh.quaternion.setFromUnitVectors(up, v[j].clone().sub(v[i]).normalize());
         group.add(mesh);
     }
-    if (state.faces) group.add(faceMesh(f, v));
+    if (state.faces && s.surface) group.add(faceMesh(f, v));
     if (state.core && s.core) group.add(coreMesh(f, v, s.core.kind));
     if (state.named) group.add(namedFaces(trueFaces(s.id, f).faces, v));
     show(group);
