@@ -4,7 +4,9 @@
 // from the solid's own file unless it names another solid in `from`, as
 // the great dodecahedron does for its dimple vertex. `length` is the variable that
 // sets the longest stake, and `stakes` turns the ECHO values of a render
-// into the stakes to cut, as [count, length in mm] pairs.
+// into the stakes to cut, as [count, length in mm] pairs. `core` names the
+// solid the frame is built on and the part whose connectors are its
+// corners.
 
 export const SOLIDS = [
     {
@@ -41,6 +43,7 @@ export const SOLIDS = [
     },
     {
         id: "stella", name: "stella octangula", file: "stella.scad",
+        core: { kind: 1, name: "octahedron" },
         length: "dowel_len", lengthLabel: "stake length", defaultLength: 150,
         parts: [
             { part: "stella_tip", label: "star point", count: 8 },
@@ -50,6 +53,7 @@ export const SOLIDS = [
     },
     {
         id: "stella8", name: "stella octangula with inner octahedron", file: "stella.scad",
+        core: { kind: 1, name: "octahedron" },
         length: "dowel_len", lengthLabel: "stake length", defaultLength: 150,
         defines: { inner: "true" },
         parts: [
@@ -60,6 +64,7 @@ export const SOLIDS = [
     },
     {
         id: "ssd", name: "small stellated dodecahedron", file: "ssd.scad",
+        core: { kind: 1, name: "dodecahedron" },
         base: 4, radii: { hex_r: 13 }, widths: { fin_t: 2.0 },
         length: "ridge_len", lengthLabel: "ridge stake length",
         defaultLength: 280, minWall: 1.8,
@@ -71,6 +76,7 @@ export const SOLIDS = [
     },
     {
         id: "gd", name: "great dodecahedron", file: "gd.scad",
+        core: { kind: 0, name: "icosahedron" },
         base: 4, widths: { fin_t: 2.0, band: 2.4 },
         length: "ridge_len", lengthLabel: "ridge stake length",
         parts: [
@@ -81,6 +87,7 @@ export const SOLIDS = [
     },
     {
         id: "gsd", name: "great stellated dodecahedron", file: "kepler.scad",
+        core: { kind: 1, name: "icosahedron" },
         base: 5, radii: { pent_r: 22 }, widths: { fin_t: 2.0 },
         defaultSize: 5, length: "ridge_len", lengthLabel: "ridge stake length",
         parts: [
@@ -91,6 +98,7 @@ export const SOLIDS = [
     },
     {
         id: "gi", name: "great icosahedron", file: "gi.scad",
+        core: { kind: 1, name: "dodecahedron" },
         base: 4, widths: { fin_t: 2.0, band: 2.4 },
         length: "long_len", lengthLabel: "longest stake length",
         parts: [

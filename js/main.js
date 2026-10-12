@@ -21,7 +21,8 @@ const FIGURE = "figure";
 // The current settings. view is FIGURE or the index of a part. wall is
 // null while it follows the dowel size. len is the longest stake, or the
 // shortest one when by is "shortest". faces shows the solid's faces in
-// the assembled view, and hidden lists the parts it leaves out.
+// the assembled view, hidden lists the parts it leaves out, and core
+// shows the solid the frame is built on.
 const state = {};
 
 function solid() {
@@ -41,8 +42,9 @@ function defaultsFor(s) {
         wall: null,
         len: s.defaultLength ?? 300,
         by: "longest",
-        faces: true,
+        faces: false,
         hidden: [],
+        core: false,
     };
 }
 
@@ -71,7 +73,8 @@ function applyUrlParams() {
     if (query.has("wall") && Number.isFinite(num("wall"))) state.wall = clamp(num("wall"), WALL);
     if (query.has("len") && Number.isFinite(num("len"))) state.len = clamp(num("len"), LENGTH);
     if (query.get("by") === "shortest") state.by = "shortest";
-    if (query.get("faces") === "0") state.faces = false;
+    if (query.get("faces") === "1") state.faces = true;
+    if (query.get("core") === "1" && s.core) state.core = true;
     state.hidden = (query.get("hide") ?? "").split(",").filter(Boolean).map(Number)
         .filter((i) => Number.isInteger(i) && i >= 0 && i < s.parts.length);
 }
@@ -83,8 +86,9 @@ function updateUrl() {
     for (const name of ["dowel", "fit", "wall", "len", "by"]) {
         if (state[name] !== defs[name]) query.set(name, state[name]);
     }
-    if (!state.faces) query.set("faces", "0");
+    if (state.faces) query.set("faces", "1");
     if (state.hidden.length) query.set("hide", state.hidden.join(","));
+    if (state.core) query.set("core", "1");
     history.replaceState(null, "", `?${query}`);
 }
 
@@ -309,6 +313,12 @@ function buildLayers() {
     toggle(["faces"], state.faces, () => {
         state.faces = !state.faces;
     });
+    const core = solid().core;
+    if (core) {
+        toggle([dot(CORE_COLOR), `${core.name} core`], state.core, () => {
+            state.core = !state.core;
+        });
+    }
 }
 
 // ---------------------------------------------------------------------
@@ -531,6 +541,7 @@ downloadEl.addEventListener("click", async () => {
 const KIND_COLORS = [0xe8664a, 0x2f4fd0, 0x2a9d8f];
 const DOWEL_COLOR = 0xd8b27a;
 const FACE_COLOR = 0x2f4fd0;
+const CORE_COLOR = 0x8b5cf6;
 
 let viewer = null;
 
@@ -578,6 +589,11 @@ function initViewer() {
         kindMaterials: KIND_COLORS.map(material),
         dowelMaterial: material(DOWEL_COLOR),
         // depthWrite off lets faces behind faces show through.
+        coreMaterial: new THREE.MeshStandardMaterial({
+            color: CORE_COLOR, transparent: true, opacity: 0.35,
+            side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
+        }),
+        coreEdgeMaterial: new THREE.LineBasicMaterial({ color: CORE_COLOR }),
         faceMaterial: new THREE.MeshStandardMaterial({
             color: FACE_COLOR, transparent: true, opacity: 0.22,
             side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
@@ -669,7 +685,19 @@ function showFrame(echo, defines) {
         group.add(mesh);
     }
     if (state.faces) group.add(faceMesh(f, v));
+    if (state.core && s.core) group.add(coreMesh(f, v, s.core.kind));
     show(group);
+}
+
+// The solid the frame is built on: the convex hull of one part's
+// connectors, with its edges drawn as lines.
+function coreMesh(f, v, kind) {
+    const geometry = new ConvexGeometry(v.filter((_, i) => f.kinds[i] === kind));
+    const group = new THREE.Group();
+    group.add(new THREE.Mesh(geometry, viewer.coreMaterial));
+    group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 1), viewer.coreEdgeMaterial));
+    group.traverse((o) => (o.renderOrder = 1));
+    return group;
 }
 
 // The solid's faces, from triangles of connector indices or from the
