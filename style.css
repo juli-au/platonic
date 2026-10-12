@@ -302,7 +302,7 @@ footer a {
     bottom: 18px;
     z-index: 4;
     margin: 0;
-    font-family: var(--heading-font);
+    font-family: var(--subheading-font);
     font-size: clamp(20px, 3.2vw, 34px);
     font-weight: 600;
     line-height: 1.15;
