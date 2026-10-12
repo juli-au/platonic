@@ -103,7 +103,7 @@ export const SOLIDS = [
 ];
 
 // The dowel sizes on offer, and the ones that have been test-printed.
-export const SIZES = [3, 4, 5, 6, 8, 10];
+export const SIZES = [2, 3, 4, 5, 6, 8, 10];
 export const TESTED = [4, 5];
 
 // The design variables for a dowel size. The bore is the dowel plus the
