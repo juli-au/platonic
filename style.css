@@ -54,6 +54,19 @@ body {
     line-height: 1.4;
 }
 
+.gallery-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.gallery-link:hover {
+    text-decoration: underline;
+}
+
 #controls {
     display: flex;
     flex-direction: column;

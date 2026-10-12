@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platonic gallery</title>
+<meta name="description" content="Photos of Platonic solids and stars built with Platonic dowel connectors.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Unbounded:wght@600&display=swap">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+<header>
+    <a class="back" href="./">&larr; back to the builder</a>
+    <h1>Platonic</h1>
+    <p class="tagline">Built at home from dowels and printed connectors</p>
+</header>
+<main class="grid">
+    <button class="cell" type="button" data-full="img/gallery/g1.jpg" aria-label="Open photo 1"><img src="img/gallery/g1-thumb.jpg" alt="A crochet star of two tetrahedra in blue and yellow" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g2.jpg" aria-label="Open photo 2"><img src="img/gallery/g2-thumb.jpg" alt="The crochet star close up" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g3.jpg" aria-label="Open photo 3"><img src="img/gallery/g3-thumb.jpg" alt="A dowel star with yellow tips around a crochet face" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g4.jpg" aria-label="Open photo 4"><img src="img/gallery/g4-thumb.jpg" alt="The crochet star from another side" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g5.jpg" aria-label="Open photo 5"><img src="img/gallery/g5-thumb.jpg" alt="Two dowel tetrahedra with yellow connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g6.jpg" aria-label="Open photo 6"><img src="img/gallery/g6-thumb.jpg" alt="An octahedron with red connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g7.jpg" aria-label="Open photo 7"><img src="img/gallery/g7-thumb.jpg" alt="An icosahedron with red connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g8.jpg" aria-label="Open photo 8"><img src="img/gallery/g8-thumb.jpg" alt="A dodecahedron with teal connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g9.jpg" aria-label="Open photo 9"><img src="img/gallery/g9-thumb.jpg" alt="A cube with red connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g10.jpg" aria-label="Open photo 10"><img src="img/gallery/g10-thumb.jpg" alt="A tetrahedron with red connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g11.jpg" aria-label="Open photo 11"><img src="img/gallery/g11-thumb.jpg" alt="A dowel star with green connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g12.jpg" aria-label="Open photo 12"><img src="img/gallery/g12-thumb.jpg" alt="A large dodecahedron with yellow connectors" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g13.jpg" aria-label="Open photo 13"><img src="img/gallery/g13-thumb.jpg" alt="A large dowel star with yellow tips" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g14.jpg" aria-label="Open photo 14"><img src="img/gallery/g14-thumb.jpg" alt="The large star in the living room" loading="lazy"></button>
+    <button class="cell" type="button" data-full="img/gallery/g15.jpg" aria-label="Open photo 15"><img src="img/gallery/g15-thumb.jpg" alt="The large star seen from above" loading="lazy"></button>
+    <button class="cell" type="button" data-video="img/gallery/v1.mp4" data-poster="img/gallery/v1-poster.jpg" aria-label="Play video"><img src="img/gallery/v1-thumb.jpg" alt="A star of two tetrahedra spinning on a wooden base" loading="lazy"><span class="play" aria-hidden="true"></span></button>
+</main>
+<footer>
+    <p>See <a href="https://yarnitti.org">Yarnitti</a> for more wacky street art crochet.</p>
+</footer>
+
+<div class="lightbox" id="lightbox" inert role="dialog" aria-modal="true" aria-label="Photo viewer">
+    <button class="lightbox__close" id="lightbox-close" type="button" aria-label="Close">&times;</button>
+    <button class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" type="button" aria-label="Previous">&lsaquo;</button>
+    <img class="lightbox__media" id="lightbox-img" src="" alt="">
+    <video class="lightbox__media" id="lightbox-video" controls loop muted playsinline hidden></video>
+    <button class="lightbox__nav lightbox__nav--next" id="lightbox-next" type="button" aria-label="Next">&rsaquo;</button>
+</div>
+
+<script src="js/gallery.js"></script>
+</body>
+</html>
