@@ -370,6 +370,7 @@ let dirty = false;
 let refit = true;
 let debounceTimer = null;
 let lastStl = null;
+let lastLongest = null;
 let files = null;
 const lengthMaps = new Map();
 
@@ -426,6 +427,17 @@ function scheduleRender(opts = {}) {
     debounceTimer = setTimeout(update, 150);
 }
 
+// Renders one part of the current solid with the current settings.
+// longest is the longest stake, which sets the frame's size.
+async function renderPart(p, longest) {
+    const s = solid();
+    const source = p.from ? byId.get(p.from) : s;
+    const defines = { ...sizeDefines(source, state.dowel, state.fit, wall()), part: `"${p.part}"` };
+    if (!p.from) defines[s.length] = longest;
+    const { stl } = await runWorker({ file: source.file, defines });
+    return stl;
+}
+
 async function update() {
     if (busy) {
         dirty = true;
@@ -444,22 +456,19 @@ async function update() {
         syncLength(map.multi);
         const longest = map.multi && state.by === "shortest" ? map.fromShortest(state.len) : state.len;
         const echo = await echoFor(s, defines, Math.round(longest * 100) / 100);
+        lastLongest = longest;
         if (p) {
-            const source = p.from ? byId.get(p.from) : s;
-            const partDefines = { ...sizeDefines(source, state.dowel, state.fit, wall()), part: `"${p.part}"` };
-            if (!p.from) partDefines[s.length] = longest;
-            const { stl } = await runWorker({ file: source.file, defines: partDefines });
-            lastStl = stl;
-            showStl(stl);
+            lastStl = await renderPart(p, longest);
+            showStl(lastStl);
         } else {
             lastStl = null;
             showFrame(echo, defines);
         }
         showFacts(echo);
-        downloadEl.disabled = !lastStl;
+        downloadEl.textContent = p ? "Download STL" : "Download all parts";
+        downloadEl.disabled = false;
         const seconds = ((performance.now() - start) / 1000).toFixed(1);
-        statusEl.textContent = p ? `rendered in ${seconds} s`
-            : "Pick a part tab above the viewer to download its STL.";
+        statusEl.textContent = `rendered in ${seconds} s`;
     } catch (err) {
         statusEl.textContent = `render failed: ${err.message}`;
         console.error(err);
@@ -474,16 +483,43 @@ document.getElementById("share").addEventListener("click", async () => {
     statusEl.textContent = "link copied";
 });
 
-downloadEl.addEventListener("click", () => {
-    if (!lastStl || !part()) {
-        return;
-    }
-    const blob = new Blob([lastStl], { type: "model/stl" });
+function save(stl, p) {
+    const blob = new Blob([stl], { type: "model/stl" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${part().part}_${state.dowel}mm.stl`;
+    link.download = `${p.part}_${state.dowel}mm.stl`;
     link.click();
     URL.revokeObjectURL(link.href);
+}
+
+// On a part tab the button saves the part on screen. On the assembled
+// view it renders every part and saves each one as its own file, a moment
+// apart, because browsers drop downloads that start together.
+downloadEl.addEventListener("click", async () => {
+    const p = part();
+    if (p) {
+        if (lastStl) save(lastStl, p);
+        return;
+    }
+    if (busy || lastLongest === null) return;
+    busy = true;
+    downloadEl.disabled = true;
+    const parts = solid().parts;
+    try {
+        for (const [i, q] of parts.entries()) {
+            statusEl.textContent = `rendering part ${i + 1} of ${parts.length}…`;
+            save(await renderPart(q, lastLongest), q);
+            await new Promise((resolve) => setTimeout(resolve, 400));
+        }
+        statusEl.textContent = `saved ${parts.length} STL file${parts.length > 1 ? "s" : ""}`;
+    } catch (err) {
+        statusEl.textContent = `render failed: ${err.message}`;
+        console.error(err);
+    } finally {
+        busy = false;
+        downloadEl.disabled = false;
+        if (dirty) update();
+    }
 });
 
 // ---------------------------------------------------------------------
