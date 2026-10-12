@@ -295,6 +295,22 @@ footer a {
     box-shadow: 0 1px 4px rgba(31, 36, 51, 0.08);
 }
 
+#figure-name {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 18px;
+    z-index: 4;
+    margin: 0;
+    font-family: var(--heading-font);
+    font-size: clamp(20px, 3.2vw, 34px);
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--text);
+    opacity: 0.85;
+    pointer-events: none;
+}
+
 #layers {
     position: absolute;
     top: 60px;

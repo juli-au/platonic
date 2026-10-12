@@ -159,3 +159,88 @@ export function frame(id, giText) {
         default: throw new Error(`no frame for ${id}`);
     }
 }
+
+// The true faces of a figure, which give it its name: for the stars these
+// are big polygons that pass through each other, not the small triangles
+// of the visible surface. Returns { faces, label }, where each face is a
+// list of connector indices in order around the face and star is set when
+// the face is a pentagram, drawn by joining every second corner.
+export function trueFaces(id, f) {
+    const corners = f.points.map((p, i) => [p, i]).filter(([, i]) => f.kinds[i] === 0);
+    switch (id) {
+        case "ssd": return { faces: rings(corners, true), label: "12 five-pointed stars" };
+        case "gsd": return { faces: rings(corners, true), label: "12 five-pointed stars" };
+        case "gd": return { faces: rings(corners, false), label: "12 pentagons" };
+        case "gi": return { faces: f.faces.map((face) => ({ points: face, star: false })), label: "20 triangles" };
+        default: {
+            const hulls = f.hulls.map((hull) => hull.map((i) => [f.points[i], i]));
+            const faces = hulls.flatMap(supportFaces);
+            const sides = faces[0].points.length;
+            const shape = { 3: "triangles", 4: "squares", 5: "pentagons" }[sides];
+            return { faces, label: `${faces.length} ${shape}` };
+        }
+    }
+}
+
+// Corners sorted by angle around axis n through their centre.
+function aroundAxis(group, n) {
+    const c = scale(group.reduce((a, [p]) => [a[0] + p[0], a[1] + p[1], a[2] + p[2]], [0, 0, 0]), 1 / group.length);
+    const u = unit(sub(group[0][0], c));
+    const w = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0]];
+    return group.map(([p, i]) => {
+        const d = sub(p, c);
+        return [Math.atan2(dot(d, w), dot(d, u)), i];
+    }).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
+}
+
+// Faces of the Kepler-Poinsot stars. Seen down each of the twelve
+// five-fold axes, the corners sit in rings of five; the widest ring on
+// the near side is one face.
+function rings(corners, star) {
+    // Of the two orientations of the twelve axes, the five-fold ones sort
+    // the corners into the fewest height levels.
+    const levelsAlong = (n) => new Set(corners.map(([p]) => dot(p, n).toFixed(5))).size;
+    const axes = [ICOSA, ICOSA_DUAL].map((set) => set.map(unit))
+        .sort((a, b) => levelsAlong(a[0]) - levelsAlong(b[0]))[0];
+    return axes.map((n) => {
+        const levels = new Map();
+        for (const [p, i] of corners) {
+            const h = dot(p, n);
+            if (h < 1e-6) continue;
+            const key = h.toFixed(5);
+            if (!levels.has(key)) levels.set(key, []);
+            levels.get(key).push([p, i]);
+        }
+        const radius = ([[p]]) => Math.sqrt(dot(p, p) - dot(p, n) ** 2);
+        const widest = [...levels.values()].filter((g) => g.length === 5)
+            .sort((a, b) => radius(b) - radius(a))[0];
+        return { points: aroundAxis(widest, n), star };
+    });
+}
+
+// Faces of a convex solid: every plane through three corners with all
+// corners on one side of it.
+function supportFaces(corners) {
+    const seen = new Set();
+    const faces = [];
+    const n = corners.length;
+    for (let a = 0; a < n; a++) {
+        for (let b = a + 1; b < n; b++) {
+            for (let c = b + 1; c < n; c++) {
+                const [pa, pb, pc] = [corners[a][0], corners[b][0], corners[c][0]];
+                const u = sub(pb, pa);
+                const v = sub(pc, pa);
+                const normal = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+                if (len(normal) < 1e-9) continue;
+                const side = corners.map(([p]) => dot(sub(p, pa), normal));
+                if (!(side.every((x) => x <= 1e-6) || side.every((x) => x >= -1e-6))) continue;
+                const on = corners.filter((_, i) => Math.abs(side[i]) <= 1e-6);
+                const key = on.map(([, i]) => i).sort((x, y) => x - y).join(",");
+                if (seen.has(key)) continue;
+                seen.add(key);
+                faces.push({ points: aroundAxis(on, unit(normal)), star: false });
+            }
+        }
+    }
+    return faces;
+}

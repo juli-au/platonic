@@ -3,12 +3,13 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 import { SOLIDS, FILES, SIZES, TESTED, autoWall, parseEcho, sizeDefines } from "./solids.js";
-import { frame } from "./frames.js";
+import { frame, trueFaces } from "./frames.js";
 
 const statusEl = document.getElementById("status");
 const downloadEl = document.getElementById("download");
 const factsEl = document.getElementById("facts");
 const tabsEl = document.getElementById("tabs");
+const figureNameEl = document.getElementById("figure-name");
 const layersEl = document.getElementById("layers");
 const form = document.getElementById("controls");
 
@@ -22,7 +23,8 @@ const FIGURE = "figure";
 // null while it follows the dowel size. len is the longest stake, or the
 // shortest one when by is "shortest". faces shows the solid's faces in
 // the assembled view, hidden lists the parts it leaves out, and core
-// shows the solid the frame is built on.
+// shows the solid the frame is built on. named shows the faces the
+// figure is named after, one at a time.
 const state = {};
 
 function solid() {
@@ -45,6 +47,7 @@ function defaultsFor(s) {
         faces: false,
         hidden: [],
         core: false,
+        named: false,
     };
 }
 
@@ -75,6 +78,7 @@ function applyUrlParams() {
     if (query.get("by") === "shortest") state.by = "shortest";
     if (query.get("faces") === "1") state.faces = true;
     if (query.get("core") === "1" && s.core) state.core = true;
+    if (query.get("named") === "1") state.named = true;
     state.hidden = (query.get("hide") ?? "").split(",").filter(Boolean).map(Number)
         .filter((i) => Number.isInteger(i) && i >= 0 && i < s.parts.length);
 }
@@ -89,6 +93,7 @@ function updateUrl() {
     if (state.faces) query.set("faces", "1");
     if (state.hidden.length) query.set("hide", state.hidden.join(","));
     if (state.core) query.set("core", "1");
+    if (state.named) query.set("named", "1");
     history.replaceState(null, "", `?${query}`);
 }
 
@@ -260,6 +265,8 @@ function dot(color) {
 // Tabs over the viewer: the assembled frame first, then one per printed
 // part.
 function buildTabs() {
+    const name = solid().name;
+    figureNameEl.textContent = name[0].toUpperCase() + name.slice(1);
     tabsEl.replaceChildren();
     const views = [[FIGURE, "assembled"], ...solid().parts.map((p, i) => [i, `${p.label} ×${p.count}`])];
     for (const [view, text] of views) {
@@ -313,6 +320,9 @@ function buildLayers() {
     toggle(["faces"], state.faces, () => {
         state.faces = !state.faces;
     });
+    toggle([`true faces (${solid().faces})`], state.named, () => {
+        state.named = !state.named;
+    });
     const core = solid().core;
     if (core) {
         toggle([dot(CORE_COLOR), `${core.name} core`], state.core, () => {
@@ -356,15 +366,16 @@ function showFacts(echo) {
     const total = s.parts.reduce((n, x) => n + x.count, 0);
     section("Connectors", String(total));
     s.parts.forEach((x, i) => {
-        row([[dot(KIND_COLORS[i]), plural(x.label, x.count)], `×${x.count}`], x === p ? "current" : "");
+        row([[dot(KIND_COLORS[i]), plural(x.label, x.count)], String(x.count)], x === p ? "current" : "");
     });
     if (echo) {
         const stakes = s.stakes(echo);
         const count = stakes.reduce((n, [c]) => n + c, 0);
         section(`Dowels, ${state.dowel} mm`, String(count));
-        for (const [n, len] of stakes) row([`${round(len)} mm long`, `×${n}`]);
+        for (const [n, len] of stakes) row([`${round(len)} mm`, String(n)]);
         const span = echo.span ?? echo.star_span;
         section("Frame", "");
+        row(["faces", trueFaces(s.id, frame(s.id, files["gi_geom.scad"])).label]);
         if (span) row(["across", `${Math.round(span)} mm`]);
         if (echo.height) row(["tall", `${Math.round(echo.height)} mm`]);
     }
@@ -555,6 +566,7 @@ const KIND_COLORS = [0xe8664a, 0x2f4fd0, 0x2a9d8f];
 const DOWEL_COLOR = 0xd8b27a;
 const FACE_COLOR = 0x2f4fd0;
 const CORE_COLOR = 0x8b5cf6;
+const NAMED_COLOR = 0xf2a900;
 
 let viewer = null;
 
@@ -607,6 +619,15 @@ function initViewer() {
             side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
         }),
         coreEdgeMaterial: new THREE.LineBasicMaterial({ color: CORE_COLOR }),
+        namedMaterial: new THREE.MeshStandardMaterial({
+            color: NAMED_COLOR, transparent: true, opacity: 0.1,
+            side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
+        }),
+        namedStrongMaterial: new THREE.MeshStandardMaterial({
+            color: NAMED_COLOR, transparent: true, opacity: 0.55,
+            side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
+        }),
+        namedEdgeMaterial: new THREE.LineBasicMaterial({ color: NAMED_COLOR }),
         faceMaterial: new THREE.MeshStandardMaterial({
             color: FACE_COLOR, transparent: true, opacity: 0.22,
             side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
@@ -635,6 +656,8 @@ function fitCamera(center, radius, margin) {
 // the camera when a new solid or view comes in. Size changes keep the
 // camera where the user put it.
 function show(object) {
+    clearInterval(faceTimer);
+    faceTimer = null;
     if (viewer.object) {
         viewer.scene.remove(viewer.object);
         viewer.object.traverse((o) => o.geometry?.dispose());
@@ -699,7 +722,43 @@ function showFrame(echo, defines) {
     }
     if (state.faces) group.add(faceMesh(f, v));
     if (state.core && s.core) group.add(coreMesh(f, v, s.core.kind));
+    if (state.named) group.add(namedFaces(trueFaces(s.id, f).faces, v));
     show(group);
+}
+
+// The faces the figure is named after. All of them show faintly, and one
+// at a time is drawn strongly with its outline, stepping on every second,
+// so they can be counted. A pentagram is filled as a fan from its centre
+// over its edges, which covers the star.
+let faceTimer = null;
+
+function namedFaces(faces, v) {
+    const group = new THREE.Group();
+    const meshes = faces.map(({ points, star }) => {
+        const c = points.reduce((a, i) => a.add(v[i]), new THREE.Vector3()).divideScalar(points.length);
+        const step = star ? 2 : 1;
+        const corners = points.map((_, k) => v[points[(k * step) % points.length]]);
+        const triangles = corners.flatMap((p, k) => [c, p, corners[(k + 1) % corners.length]]);
+        const geometry = new THREE.BufferGeometry().setFromPoints(triangles);
+        geometry.computeVertexNormals();
+        const mesh = new THREE.Mesh(geometry, viewer.namedMaterial);
+        const outline = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(corners), viewer.namedEdgeMaterial);
+        outline.visible = false;
+        group.add(mesh, outline);
+        return [mesh, outline];
+    });
+    let current = 0;
+    const highlight = () => {
+        meshes.forEach(([mesh, outline], k) => {
+            mesh.material = k === current ? viewer.namedStrongMaterial : viewer.namedMaterial;
+            outline.visible = k === current;
+        });
+        current = (current + 1) % meshes.length;
+    };
+    highlight();
+    faceTimer = setInterval(highlight, 1000);
+    group.traverse((o) => (o.renderOrder = 1));
+    return group;
 }
 
 // The solid the frame is built on: the convex hull of one part's
