@@ -1,0 +1,39 @@
+# Mirror the site to juli-au/platonic, which serves it at platonic.juli.au.
+# juli.au is verified to the juli-au organisation, so only its
+# repositories can use the domain. Mirroring on every push keeps the two
+# repositories on the same commit; the only difference is the CNAME file.
+name: mirror
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: juli-au/platonic
+            cname: platonic.juli.au
+            secret: MIRROR_SSH_KEY
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Pushing to the mirror needs the full history, not the
+          # shallow single-commit checkout that is the default.
+          fetch-depth: 0
+
+      - name: Push to ${{ matrix.repo }} with swapped CNAME
+        run: |
+          echo "${{ matrix.cname }}" > CNAME
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add CNAME
+          git commit -m "Mirror juliaogris/platonic@${GITHUB_SHA::7}"
+          mkdir -p ~/.ssh
+          echo "${{ secrets[matrix.secret] }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          git push --force git@github.com:${{ matrix.repo }}.git HEAD:main
