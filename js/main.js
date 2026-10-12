@@ -465,7 +465,7 @@ async function update() {
             showFrame(echo, defines);
         }
         showFacts(echo);
-        downloadEl.textContent = p ? "Download STL" : "Download all parts";
+        downloadEl.textContent = p ? "Download STL" : "Download all";
         downloadEl.disabled = false;
         const seconds = ((performance.now() - start) / 1000).toFixed(1);
         statusEl.textContent = `rendered in ${seconds} s`;
@@ -703,7 +703,52 @@ document.getElementById("canvas").addEventListener("pointerdown", () => {
 });
 
 // ---------------------------------------------------------------------
+// Heading fonts to try out. The choice is kept in this browser only.
 
+const FONTS = [
+    ["Fraunces", "Georgia, serif"],
+    ["DM Serif Display", "Georgia, serif"],
+    ["Outfit", "system-ui, sans-serif"],
+    ["Bricolage Grotesque", "system-ui, sans-serif"],
+    ["Unbounded", "system-ui, sans-serif"],
+    ["Josefin Sans", "system-ui, sans-serif"],
+    ["Comfortaa", "system-ui, sans-serif"],
+];
+
+function buildFonts() {
+    const el = document.getElementById("fonts");
+    let chosen = FONTS[0][0];
+    try {
+        chosen = localStorage.getItem("headingFont") ?? chosen;
+    } catch {
+        // Storage can be blocked; the default font stays.
+    }
+    const apply = (name) => {
+        const [, fallback] = FONTS.find(([n]) => n === name) ?? FONTS[0];
+        document.documentElement.style.setProperty("--heading-font", `"${name}", ${fallback}`);
+        for (const b of el.children) b.setAttribute("aria-pressed", String(b.textContent === name));
+    };
+    for (const [name] of FONTS) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = name;
+        button.style.fontFamily = `"${name}"`;
+        button.addEventListener("click", () => {
+            apply(name);
+            try {
+                localStorage.setItem("headingFont", name);
+            } catch {
+                // Not kept, but the font still changes for this visit.
+            }
+        });
+        el.append(button);
+    }
+    apply(chosen);
+}
+
+// ---------------------------------------------------------------------
+
+buildFonts();
 applyUrlParams();
 buildControls();
 buildTabs();

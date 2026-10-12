@@ -1,4 +1,4 @@
-# platonic
+# Platonic
 
 Dowel connectors for Platonic solids and their stellar friends, rendered in the browser. Pick a solid and a part, set the dowel size and length, and download the STL. Print the connectors, cut the dowels to the lengths the page shows, and push them together into a frame.
 
@@ -10,7 +10,7 @@ The settings live in the URL query string, so a configured part can be shared by
 
 ## Prints
 
-You may sell prints made with platonic. If you print one, I'd love a photo at [julia.ogris@gmail.com](mailto:julia.ogris@gmail.com), but no pressure.
+You may sell prints made with Platonic. If you print one, I'd love a photo at [julia.ogris@gmail.com](mailto:julia.ogris@gmail.com), but no pressure.
 
 ## How it works
 

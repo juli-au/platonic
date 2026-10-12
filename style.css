@@ -7,6 +7,7 @@
     --accent-soft: #e5e9fb;
     --border: #e2ddd2;
     --dot: #d9d3c5;
+    --heading-font: "Fraunces", Georgia, serif;
 }
 
 * {
@@ -38,7 +39,7 @@ body {
 
 #panel h1 {
     margin: 0;
-    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-family: var(--heading-font);
     font-size: 30px;
     font-weight: 700;
     letter-spacing: -0.5px;
@@ -74,7 +75,7 @@ legend {
     width: 100%;
     padding: 0;
     margin-bottom: 2px;
-    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-family: var(--heading-font);
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
@@ -166,6 +167,10 @@ legend {
     background: var(--panel);
     color: var(--accent);
     cursor: pointer;
+}
+
+.actions button {
+    white-space: nowrap;
 }
 
 .actions button#download {
@@ -373,4 +378,26 @@ footer a {
         transform: translateX(0);
         box-shadow: -4px 0 24px rgba(31, 36, 51, 0.18);
     }
+}
+
+#fonts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+#fonts button {
+    padding: 3px 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+}
+
+#fonts button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
 }
