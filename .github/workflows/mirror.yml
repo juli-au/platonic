@@ -1,7 +1,8 @@
-# Mirror the site to juli-au/platonic, which serves it at platonic.juli.au.
-# juli.au is verified to the juli-au organisation, so only its
-# repositories can use the domain. Mirroring on every push keeps the two
-# repositories on the same commit; the only difference is the CNAME file.
+# Mirror the site to juli-au/platonic and mak3r-space/platonic, which serve
+# it at platonic.juli.au and platonic.mak3r.space. Each domain is verified
+# to its organisation, so only that organisation's repositories can use it.
+# Mirroring on every push keeps the repositories on the same commit; the
+# only difference is the CNAME file.
 name: mirror
 
 on:
@@ -18,6 +19,9 @@ jobs:
           - repo: juli-au/platonic
             cname: platonic.juli.au
             secret: MIRROR_SSH_KEY
+          - repo: mak3r-space/platonic
+            cname: platonic.mak3r.space
+            secret: MIRROR_SSH_KEY_MAK3R
     steps:
       - uses: actions/checkout@v4
         with:
