@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
+import { ConvexGeometry } from "three/addons/geometries/ConvexGeometry.js";
 import { SOLIDS, FILES, SIZES, TESTED, autoWall, parseEcho, sizeDefines } from "./solids.js";
 import { frame } from "./frames.js";
 
@@ -18,7 +19,8 @@ const FIGURE = "figure";
 
 // The current settings. view is FIGURE or the index of a part. wall is
 // null while it follows the dowel size. len is the longest stake, or the
-// shortest one when by is "shortest".
+// shortest one when by is "shortest". faces shows the solid's faces in
+// the assembled view.
 const state = {};
 
 function solid() {
@@ -38,6 +40,7 @@ function defaultsFor(s) {
         wall: null,
         len: s.defaultLength ?? 300,
         by: "longest",
+        faces: true,
     };
 }
 
@@ -66,6 +69,7 @@ function applyUrlParams() {
     if (query.has("wall") && Number.isFinite(num("wall"))) state.wall = clamp(num("wall"), WALL);
     if (query.has("len") && Number.isFinite(num("len"))) state.len = clamp(num("len"), LENGTH);
     if (query.get("by") === "shortest") state.by = "shortest";
+    if (query.get("faces") === "0") state.faces = false;
 }
 
 function updateUrl() {
@@ -75,6 +79,7 @@ function updateUrl() {
     for (const name of ["dowel", "fit", "wall", "len", "by"]) {
         if (state[name] !== defs[name]) query.set(name, state[name]);
     }
+    if (!state.faces) query.set("faces", "0");
     history.replaceState(null, "", `?${query}`);
 }
 
@@ -233,9 +238,20 @@ function syncLength(multi = !byRow.hidden) {
 }
 
 // Tabs over the viewer: the assembled frame first, then one per printed
-// part.
+// part. A faces switch follows the tabs while the assembled view shows.
 function buildTabs() {
     tabsEl.replaceChildren();
+    const faces = document.createElement("button");
+    faces.type = "button";
+    faces.className = "toggle";
+    faces.textContent = "faces";
+    faces.setAttribute("aria-pressed", String(state.faces));
+    faces.hidden = state.view !== FIGURE;
+    faces.addEventListener("click", () => {
+        state.faces = !state.faces;
+        faces.setAttribute("aria-pressed", String(state.faces));
+        scheduleRender();
+    });
     const views = [[FIGURE, "assembled"], ...solid().parts.map((p, i) => [i, `${p.label} ×${p.count}`])];
     for (const [view, text] of views) {
         const button = document.createElement("button");
@@ -254,11 +270,15 @@ function buildTabs() {
         button.addEventListener("click", () => {
             if (state.view === view) return;
             state.view = view;
-            for (const b of tabsEl.children) b.setAttribute("aria-selected", String(b === button));
+            for (const b of tabsEl.querySelectorAll("[role=tab]")) {
+                b.setAttribute("aria-selected", String(b === button));
+            }
+            faces.hidden = view !== FIGURE;
             scheduleRender({ refit: true });
         });
         tabsEl.append(button);
     }
+    tabsEl.append(faces);
 }
 
 // ---------------------------------------------------------------------
@@ -444,6 +464,7 @@ downloadEl.addEventListener("click", () => {
 // its connectors in the assembled frame.
 const KIND_COLORS = [0xe8664a, 0x2f4fd0, 0x2a9d8f];
 const DOWEL_COLOR = 0xd8b27a;
+const FACE_COLOR = 0x2f4fd0;
 
 let viewer = null;
 
@@ -490,6 +511,11 @@ function initViewer() {
         scene, camera, controls, loader: new STLLoader(),
         kindMaterials: KIND_COLORS.map(material),
         dowelMaterial: material(DOWEL_COLOR),
+        // depthWrite off lets faces behind faces show through.
+        faceMaterial: new THREE.MeshStandardMaterial({
+            color: FACE_COLOR, transparent: true, opacity: 0.22,
+            side: THREE.DoubleSide, depthWrite: false, roughness: 0.9,
+        }),
         object: null,
     };
 }
@@ -573,7 +599,27 @@ function showFrame(echo, defines) {
         mesh.quaternion.setFromUnitVectors(up, v[j].clone().sub(v[i]).normalize());
         group.add(mesh);
     }
+    if (state.faces) group.add(faceMesh(f, v));
     show(group);
+}
+
+// The solid's faces, from triangles of connector indices or from the
+// convex hull of each listed set of connectors.
+function faceMesh(f, v) {
+    const group = new THREE.Group();
+    if (f.faces) {
+        const geometry = new THREE.BufferGeometry().setFromPoints(f.faces.flat().map((i) => v[i]));
+        geometry.computeVertexNormals();
+        group.add(new THREE.Mesh(geometry, viewer.faceMaterial));
+    }
+    for (const hull of f.hulls ?? []) {
+        group.add(new THREE.Mesh(new ConvexGeometry(hull.map((i) => v[i])), viewer.faceMaterial));
+    }
+    // Draw the faces after the opaque rods and balls, so those show
+    // through them.
+    group.renderOrder = 1;
+    group.traverse((o) => (o.renderOrder = 1));
+    return group;
 }
 
 // ---------------------------------------------------------------------

@@ -241,6 +241,21 @@ footer a {
     box-shadow: 0 1px 4px rgba(31, 36, 51, 0.08);
 }
 
+#tabs .toggle {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+#tabs .toggle[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+#tabs .toggle[hidden] {
+    display: none;
+}
+
 #tabs .dot {
     display: inline-block;
     width: 10px;
@@ -329,6 +344,21 @@ footer a {
     color: var(--text);
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(31, 36, 51, 0.08);
+}
+
+#tabs .toggle {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+#tabs .toggle[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+#tabs .toggle[hidden] {
+    display: none;
 }
 
 #tabs .dot {

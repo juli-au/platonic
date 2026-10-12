@@ -2,7 +2,9 @@
 //
 // frame(id, giText) returns the connector positions, the part each one is
 // (an index into the solid's parts), and the stakes as pairs of connector
-// indices. Positions are in arbitrary units; the viewer scales them. The
+// indices. The faces come either as `faces`, triangles of connector
+// indices, or as `hulls`, sets of connector indices whose convex hull is a
+// face-bounded solid. Positions are in arbitrary units; the viewer scales them. The
 // great icosahedron comes from the point and edge lists in gi_geom.scad,
 // passed in as text.
 
@@ -60,7 +62,8 @@ function shortest(points) {
 }
 
 function convex(points) {
-    return { points, kinds: points.map(() => 0), edges: pairsAt(points, shortest(points)) };
+    const all = points.map((_, i) => i);
+    return { points, kinds: points.map(() => 0), edges: pairsAt(points, shortest(points)), hulls: [all] };
 }
 
 // The core vertices closest to direction n: the face of the core that n
@@ -85,6 +88,7 @@ function stellate(core, faceDirs, size, reach, sign, coreKind) {
     const points = [...core];
     const kinds = core.map(() => coreKind);
     const edges = pairsAt(core, edge);
+    const faces = [];
     for (const dir of faceDirs) {
         const n = unit(dir);
         const face = faceOf(core, n, size);
@@ -92,8 +96,13 @@ function stellate(core, faceDirs, size, reach, sign, coreKind) {
         const index = points.push(p) - 1;
         kinds.push(1 - coreKind);
         for (const f of face) edges.push([f, index]);
+        // The visible surface is a triangle from the new point to each
+        // core edge of the face.
+        for (const [a, b] of pairsAt(face.map((f) => core[f]), edge)) {
+            faces.push([index, face[a], face[b]]);
+        }
     }
-    return { points, kinds, edges };
+    return { points, kinds, edges, faces };
 }
 
 function stella(inner) {
@@ -103,7 +112,11 @@ function stella(inner) {
     // corners and from the four neighbouring crosses.
     const edges = pairsAt(points, Math.SQRT2)
         .filter(([i, j]) => inner || i < CUBE.length);
-    return { points, kinds, edges };
+    // The two tetrahedra take alternate cube corners.
+    const parity = (p) => p[0] * p[1] * p[2] > 0;
+    const hulls = [true, false].map((side) =>
+        CUBE.map((p, i) => [p, i]).filter(([p]) => parity(p) === side).map(([, i]) => i));
+    return { points, kinds, edges, hulls };
 }
 
 function greatIcosahedron(text) {
@@ -112,7 +125,9 @@ function greatIcosahedron(text) {
         return JSON.parse(`[${m[1].replace(/,\s*$/, "")}]`);
     };
     const points = list("gi_points");
-    const edges = list("gi_edges");
+    // An edge is listed as [from, to, stake kind].
+    const edges = list("gi_edges").map(([i, j]) => [i, j]);
+    const faces = list("gi_faces");
     // The tips are on the unit sphere and the hubs inside them, as listed
     // in gi_kind_r.
     const radii = list("gi_kind_r");
@@ -120,7 +135,7 @@ function greatIcosahedron(text) {
         const r = len(p);
         return radii.reduce((best, kr, k) => (Math.abs(kr - r) < Math.abs(radii[best] - r) ? k : best), 0);
     });
-    return { points, kinds, edges };
+    return { points, kinds, edges, faces };
 }
 
 export function frame(id, giText) {
