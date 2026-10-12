@@ -7,7 +7,7 @@
     --accent-soft: #e5e9fb;
     --border: #e2ddd2;
     --dot: #d9d3c5;
-    --heading-font: "Fraunces", Georgia, serif;
+    --heading-font: "Unbounded", system-ui, sans-serif;
 }
 
 * {
@@ -378,26 +378,4 @@ footer a {
         transform: translateX(0);
         box-shadow: -4px 0 24px rgba(31, 36, 51, 0.18);
     }
-}
-
-#fonts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 8px;
-}
-
-#fonts button {
-    padding: 3px 8px;
-    font-size: 13px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--panel);
-    color: var(--text);
-    cursor: pointer;
-}
-
-#fonts button[aria-pressed="true"] {
-    border-color: var(--accent);
-    color: var(--accent);
 }
