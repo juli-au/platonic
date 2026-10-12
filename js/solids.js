@@ -40,6 +40,25 @@ export const SOLIDS = [
         stakes: (e) => [[30, e.dowel_len]],
     },
     {
+        id: "stella", name: "stella octangula", file: "stella.scad",
+        length: "dowel_len", lengthLabel: "stake length", defaultLength: 150,
+        parts: [
+            { part: "stella_tip", label: "star point", count: 8 },
+            { part: "stella_cross", label: "cross", count: 6 },
+        ],
+        stakes: (e) => [[24, e.dowel_len]],
+    },
+    {
+        id: "stella8", name: "stella octangula with inner octahedron", file: "stella.scad",
+        length: "dowel_len", lengthLabel: "stake length", defaultLength: 150,
+        defines: { inner: "true" },
+        parts: [
+            { part: "stella_tip", label: "star point", count: 8 },
+            { part: "stella_cross8", label: "cross", count: 6 },
+        ],
+        stakes: (e) => [[36, e.dowel_len]],
+    },
+    {
         id: "ssd", name: "small stellated dodecahedron", file: "ssd.scad",
         base: 4, radii: { hex_r: 13 }, widths: { fin_t: 2.0 },
         length: "ridge_len", lengthLabel: "ridge stake length",
@@ -95,7 +114,7 @@ export function sizeDefines(solid, dowel, fit, wall) {
     const round = (v) => Math.round(v * 100) / 100;
     const bore = round(dowel + fit);
     const k = (dowel + 1.1) / ((solid.base ?? 4) + 1.1);
-    const out = { bore_d: bore, wall, socket: Math.max(14, Math.round(3.5 * dowel)) };
+    const out = { bore_d: bore, wall, socket: Math.max(14, Math.round(3.5 * dowel)), ...solid.defines };
     for (const [name, v] of Object.entries(solid.radii ?? {})) out[name] = round(v * k);
     for (const [name, v] of Object.entries(solid.widths ?? {})) out[name] = round(v * Math.max(1, k));
     return out;
@@ -105,7 +124,7 @@ export function sizeDefines(solid, dowel, fit, wall) {
 // OpenSCAD's file system, so `use` and `include` between them resolve.
 export const FILES = [
     "tetra.scad", "cube.scad", "octa.scad", "dodeca.scad", "icosa.scad",
-    "ssd.scad", "gd.scad", "kepler.scad", "gi.scad",
+    "stella.scad", "ssd.scad", "gd.scad", "kepler.scad", "gi.scad",
     "gi_geom.scad", "vertex.scad", "yarn.scad",
 ];
 
