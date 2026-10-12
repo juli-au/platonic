@@ -41,7 +41,7 @@ body {
 #panel h1 {
     margin: 0;
     font-family: var(--heading-font);
-    font-size: 30px;
+    font-size: 36px;
     font-weight: 700;
     letter-spacing: -0.5px;
     color: var(--accent);
