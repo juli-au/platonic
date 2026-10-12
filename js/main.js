@@ -337,34 +337,47 @@ function solidEcho(echoes) {
     return echoes.map(parseEcho).find((e) => e.span ?? e.star_span ?? e.height);
 }
 
+// The facts card is a small table in three sections: the connectors to
+// print, the dowels to cut and the size of the frame. The part on screen
+// is highlighted in the connector rows.
 function showFacts(echo) {
     factsEl.replaceChildren();
     const s = solid();
     const p = part();
-    const add = (text) => {
-        const li = document.createElement("li");
-        li.textContent = text;
-        factsEl.append(li);
+    const table = document.createElement("table");
+    const row = (cells, className) => {
+        const tr = table.insertRow();
+        if (className) tr.className = className;
+        for (const cell of cells) tr.insertCell().append(...[cell].flat());
+        return tr;
     };
-    if (p) {
-        add(`Print ${p.count} of this part.`);
-        if (p.from) add(`It is the same part as the ${byId.get(p.from).name} vertex.`);
-    }
-    const parts = s.parts.map((x) => `${x.count} ${plural(x.label, x.count)}`);
+    const section = (title, total) => row([title, total], "section");
+
     const total = s.parts.reduce((n, x) => n + x.count, 0);
-    add(`Connectors: ${total}${s.parts.length > 1 ? ` (${parts.join(", ")})` : ""}.`);
+    section("Connectors", String(total));
+    s.parts.forEach((x, i) => {
+        row([[dot(KIND_COLORS[i]), plural(x.label, x.count)], `×${x.count}`], x === p ? "current" : "");
+    });
     if (echo) {
         const stakes = s.stakes(echo);
         const count = stakes.reduce((n, [c]) => n + c, 0);
-        const cuts = stakes.map(([n, len]) => `${n} × ${round(len)} mm`);
-        add(`Dowels: ${count}${stakes.length > 1 ? ` (${cuts.join(", ")})` : ` × ${round(stakes[0][1])} mm`}.`);
+        section(`Dowels, ${state.dowel} mm`, String(count));
+        for (const [n, len] of stakes) row([`${round(len)} mm long`, `×${n}`]);
         const span = echo.span ?? echo.star_span;
-        if (span) add(`The frame is ${Math.round(span)} mm across.`);
-        if (echo.height) add(`The frame is ${Math.round(echo.height)} mm tall.`);
+        section("Frame", "");
+        if (span) row(["across", `${Math.round(span)} mm`]);
+        if (echo.height) row(["tall", `${Math.round(echo.height)} mm`]);
     }
-    if (!TESTED.includes(state.dowel)) {
-        add(`${state.dowel} mm parts have not been test-printed yet.`);
-    }
+    factsEl.append(table);
+
+    const note = (text) => {
+        const el = document.createElement("p");
+        el.className = "note";
+        el.textContent = text;
+        factsEl.append(el);
+    };
+    if (p?.from) note(`The ${p.label} is the same part as the ${byId.get(p.from).name} vertex.`);
+    if (!TESTED.includes(state.dowel)) note(`${state.dowel} mm parts have not been test-printed yet.`);
 }
 
 // ---------------------------------------------------------------------

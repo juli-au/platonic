@@ -141,12 +141,60 @@ legend {
 }
 
 #facts {
-    margin: 0;
-    padding: 12px 14px 12px 32px;
+    padding: 6px 14px 10px;
     border-radius: 14px;
     background: var(--accent-soft);
     font-size: 14px;
-    line-height: 1.55;
+}
+
+#facts table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#facts td {
+    padding: 3px 0;
+}
+
+#facts td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+#facts .section td {
+    padding-top: 10px;
+    border-bottom: 1px solid rgba(47, 79, 208, 0.18);
+    font-family: var(--subheading-font);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+}
+
+#facts .section td:last-child {
+    color: var(--accent);
+    font-size: 14px;
+}
+
+#facts .current td {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+#facts .dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 8px;
+    border-radius: 50%;
+}
+
+#facts .note {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--muted);
 }
 
 #facts:empty {
