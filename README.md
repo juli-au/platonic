@@ -1,5 +1,7 @@
 # Platonic
 
+[![Listed on SkipTheCAD](https://skipthecad.com/badge/listed-dark.svg)](https://skipthecad.com/generators/platonic-dowel-connectors/)
+
 Dowel connectors for Platonic solids and their stellar friends, rendered in the browser. Pick a solid and a part, set the dowel size and length, and download the STL. Print the connectors, cut the dowels to the lengths the page shows, and push them together into a frame.
 
 Live site: https://platonic.juli.au/
